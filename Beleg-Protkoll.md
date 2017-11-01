@@ -44,21 +44,21 @@ Bei einem CRC- Fehler  soll kein ACK gesendet werden
 
 ## Hinweise
 
-1 Sinnvoll ist eine gleitende Anpassung des Timeouts an der Übertragungskanal um den Datendurchsatz bei Paketwiederholungen zu erhöhen, Berechnung siehe z.B. TCP-Protokoll
+1. Sinnvoll ist eine gleitende Anpassung des Timeouts an der Übertragungskanal um den Datendurchsatz bei Paketwiederholungen zu erhöhen, Berechnung siehe z.B. TCP-Protokoll
 
-2 In Java u.U. Klasse java.nio.ByteBuffer nutzbar
+2. In Java u.U. Klasse java.nio.ByteBuffer nutzbar
 
-3 Die Länge des Datenfeldes kann über die abfragbare UDP-Paketlänge ermittelt werden.
+3. Die Länge des Datenfeldes kann über die abfragbare UDP-Paketlänge ermittelt werden.
 
-4 Implementierungsdetails für CRC32: gespiegeltes Polynom, Initialisierung des Registers mit 0xffffffff, Berechnung des Endwerts XOR 0xffffffff
+4. Implementierungsdetails für CRC32: gespiegeltes Polynom, Initialisierung des Registers mit 0xffffffff, Berechnung des Endwerts XOR 0xffffffff
 Test:  Codierung der ASCII-Folge 123456789  muss die CRC cbf43926  ergeben
 Siehe dazu auch http://introcs.cs.princeton.edu/java/51data/CRC32.java.html
 
-5 Für Stringhandling in Java siehe z.B. Klassen DataInput.readUTF  bzw. DataInputStream.readUTF
+5. Für Stringhandling in Java siehe z.B. Klassen DataInput.readUTF  bzw. DataInputStream.readUTF
 Diese Klassen weichen zwar in drei Punkten vom UTF-8-Standard ab, welche aber für die Belegaufgabe unkritisch seien sollten, siehe:
  http://docs.oracle.com/javase/6/docs/api/java/io/DataInput.html#modified-utf-8
 
-6 Nützlich sind die Javaklassen: ByteArrayInputStream, CheckedInputStream, DataInputStream
+6. Nützlich sind die Javaklassen: ByteArrayInputStream, CheckedInputStream, DataInputStream
 
 
 
