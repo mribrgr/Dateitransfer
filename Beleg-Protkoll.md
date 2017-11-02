@@ -13,7 +13,7 @@ Nachfolgend ist das Protokoll zum Beleg Dateitransfer beschrieben. Implementiere
   * Beachten Sie die Vorgehensweise des Protokolls bzgl. verlorener Daten / ACKs etc.
 * Network-Byte-Order:  Big-Endian-Format [2](#hinweise)
 * Die Länge eines Datagrams [3](#hinweise) sei beliebig innerhalb des UDP-Standards, eine sinnvolle Länge ergibt sich aus der MTU des genutzten Netzes
-* CRC32-Polynom (IEEE-Standard) [4](#Hinweise): 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
+* CRC32-Polynom (IEEE-Standard) [4](#hinweise): 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
 
 
 
@@ -42,7 +42,7 @@ Bei einem CRC- Fehler  soll kein ACK gesendet werden
 
 
 
-## (#Hinweise)
+## Hinweise
 
 1. Sinnvoll ist eine gleitende Anpassung des Timeouts an der Übertragungskanal um den Datendurchsatz bei Paketwiederholungen zu erhöhen, Berechnung siehe z.B. TCP-Protokoll
 
