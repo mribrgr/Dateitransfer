@@ -8,12 +8,12 @@ Nachfolgend ist das Protokoll zum Beleg Dateitransfer beschrieben. Implementiere
 * Der Client wählt eine Sessionnummer per Zufall.
 * Übertragungsprotokoll: 
   * Stop-and-Wait-Protokoll
-  * Bei Absendung eines Paketes wird ein Timeout [Hinweise](#Hinweise) gestartet, welcher mit korrekter Bestätigung durch den Empfänger zurückgesetzt wird.
+  * Bei Absendung eines Paketes wird ein Timeout [1](#hinweise) gestartet, welcher mit korrekter Bestätigung durch den Empfänger zurückgesetzt wird.
   * Bei Auslösung des Timeouts wird das Paket erneut gesendet. Dies wird maximal 10 mal wiederholt. Danach erfolgt ein Programmabbruch mit einer Fehlermeldung. 
   * Beachten Sie die Vorgehensweise des Protokolls bzgl. verlorener Daten / ACKs etc.
-* Network-Byte-Order:  Big-Endian-Format [Hinweise](#Hinweise)
-* Die Länge eines Datagrams [Hinweise](#Hinweise) sei beliebig innerhalb des UDP-Standards, eine sinnvolle Länge ergibt sich aus der MTU des genutzten Netzes
-* CRC32-Polynom (IEEE-Standard) [Hinweise](#Hinweise): 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
+* Network-Byte-Order:  Big-Endian-Format [2](#hinweise)
+* Die Länge eines Datagrams [3](#hinweise) sei beliebig innerhalb des UDP-Standards, eine sinnvolle Länge ergibt sich aus der MTU des genutzten Netzes
+* CRC32-Polynom (IEEE-Standard) [4](#Hinweise): 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
 
 
 
@@ -26,7 +26,7 @@ Nachfolgend ist das Protokoll zum Beleg Dateitransfer beschrieben. Implementiere
 * 5-Byte Kennung „Start“  als ASCII-Zeichen
 * 64-Bit Dateilänge (unsigned integer) (für Dateien > 4 GB)
 * 2 Byte (unsigned integer) Länge des Dateinamens  
-* 0-255 Byte Dateiname als String mit Codierung UTF-8 [Hinweise](#Hinweise)
+* 0-255 Byte Dateiname als String mit Codierung UTF-8 [5](#hinweise)
 * 32-Bit-CRC über alle Daten des Startpaketes
 
 ### Datenpakete (Client -> Server)
