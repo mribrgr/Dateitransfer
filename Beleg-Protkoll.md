@@ -8,12 +8,12 @@ Nachfolgend ist das Protokoll zum Beleg Dateitransfer beschrieben. Implementiere
 * Der Client wählt eine Sessionnummer per Zufall.
 * Übertragungsprotokoll: 
   * Stop-and-Wait-Protokoll
-  * Bei Absendung eines Paketes wird ein Timeout [Hinweise][] gestartet, welcher mit korrekter Bestätigung durch den Empfänger zurückgesetzt wird.
+  * Bei Absendung eines Paketes wird ein Timeout [Hinweise](#Hinweise) gestartet, welcher mit korrekter Bestätigung durch den Empfänger zurückgesetzt wird.
   * Bei Auslösung des Timeouts wird das Paket erneut gesendet. Dies wird maximal 10 mal wiederholt. Danach erfolgt ein Programmabbruch mit einer Fehlermeldung. 
   * Beachten Sie die Vorgehensweise des Protokolls bzgl. verlorener Daten / ACKs etc.
-* Network-Byte-Order:  Big-Endian-Format [Hinweise][]
-* Die Länge eines Datagrams [Hinweise][] sei beliebig innerhalb des UDP-Standards, eine sinnvolle Länge ergibt sich aus der MTU des genutzten Netzes
-* CRC32-Polynom (IEEE-Standard) [Hinweise][]: 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
+* Network-Byte-Order:  Big-Endian-Format [Hinweise](#Hinweise)
+* Die Länge eines Datagrams [Hinweise](#Hinweise) sei beliebig innerhalb des UDP-Standards, eine sinnvolle Länge ergibt sich aus der MTU des genutzten Netzes
+* CRC32-Polynom (IEEE-Standard) [Hinweise](#Hinweise): 0x04C11DB7 für die Fehlererkennung im Startpaket und in der Gesamtdatei. 
 
 
 
