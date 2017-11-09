@@ -9,8 +9,8 @@
 * Der Server idefix ist nur hochschulintern oder per VPN erreichbar.
 * Struktur des Archivs: 
 
-
-sXXXXX		← Ihre eigene S-Nummer  
+```
+sXXXXX		← Ihre eigene S-Nummer  
 │  
 ├── README.md	(in der ersten Zeile sollte Ihr vollständiger Name stehen)  
 ├── make.sh  
@@ -22,8 +22,8 @@ sXXXXX		← Ihre eigene S-Nummer
 │   └── ...  
 └── src/  
     ├── *.java  
-    └── ...
-
+    └── ...
+```
 
 * Format der README.md ist plain ASCII (Markdown) kein Word etc.
 * Mit make.sh sollen die Klassen neu erstellt werden können.
