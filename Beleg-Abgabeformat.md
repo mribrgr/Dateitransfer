@@ -10,7 +10,7 @@
 * Struktur des Archivs: 
 
 
-XXXXX		← Ihre eigene S-Nummer  
+sXXXXX		← Ihre eigene S-Nummer  
 │  
 ├── README.md	(in der ersten Zeile sollte Ihr vollständiger Name stehen)  
 ├── make.sh  
