@@ -10,18 +10,18 @@
 * Struktur des Archivs: 
 
 
-XXXXX		← Ihre eigene S-Nummer
-│
-├── README.md	(in der ersten Zeile sollte Ihr vollständiger Name stehen)
-├── make.sh
-├── client-udp		(Parameter: host port filename)
-├── server-udp		(Parameter: port)
-├── doc/			    (Projektdokumentation)
-├── bin/
-│   ├── *.class
-│   └── ...
-└── src/
-    ├── *.java
+XXXXX		← Ihre eigene S-Nummer  
+│  
+├── README.md	(in der ersten Zeile sollte Ihr vollständiger Name stehen)  
+├── make.sh  
+├── client-udp		(Parameter: host port filename)  
+├── server-udp		(Parameter: port)  
+├── doc/			    (Projektdokumentation)  
+├── bin/  
+│   ├── *.class  
+│   └── ...  
+└── src/  
+    ├── *.java  
     └── ...
 
 
