@@ -8,4 +8,4 @@ Die Aufgabenstellung besteht aus den Teilen:
 
 Mittes des bereitgestellten Testskripts kann die formale Erfüllung der Kriterien getestet werden.
 
-Hinweise zur Anlegung des eignen Repositories und zu Git finden Sie [hier](github.com/HTWDD-RN/blob/master/RTSP-Streaming/git.md).
+Hinweise zur Anlegung des eignen Repositories und zu Git finden Sie [hier](https://github.com/HTWDD-RN/blob/master/RTSP-Streaming/git.md).
