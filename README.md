@@ -2,8 +2,10 @@
 Beleg UDP-Dateitransfer für Rechnernetze/Kommunikationssysteme
 
 Die Aufgabenstellung besteht aus den Teilen:
-* Aufgabenstellung
-* Protokoll
-* Abgabeformat
+* [Aufgabenstellung](Beleg-Aufgabenstellung.md)
+* [Protokoll](Beleg-Protokoll.md)
+* [Abgabeformat](Beleg-Abgabeformat.md)
 
 Mittes des bereitgestellten Testskripts kann die formale Erfüllung der Kriterien getestet werden.
+
+Hinweise zur Anlegung des eignen Repositories und zu Git finden Sie [hier](github.com/HTWDD-RN/RTSP-Streaming/git.md).
