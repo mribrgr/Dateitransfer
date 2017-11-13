@@ -6,6 +6,6 @@ Die Aufgabenstellung besteht aus den Teilen:
 * [Protokoll](Beleg-Protokoll.md)
 * [Abgabeformat](Beleg-Abgabeformat.md)
 
-Mittes des bereitgestellten Testskripts kann die formale Erfüllung der Kriterien getestet werden.
+Mittels des bereitgestellten Testskripts kann die formale Erfüllung der Abgabekriterien getestet werden.
 
-Hinweise zur Anlegung des eignen Repositories und zu Git finden Sie [hier](https://github.com/HTWDD-RN/RTSP-Streaming/blob/master/git.md).
+Hinweise zur Anlegung des eigenen Repositories und zu Git finden Sie [hier](https://github.com/HTWDD-RN/RTSP-Streaming/blob/master/git.md).
