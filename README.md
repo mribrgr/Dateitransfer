@@ -8,6 +8,4 @@ Die Aufgabenstellung besteht aus den Teilen:
 * [Testverfahren](Beleg-Testverfahren.md)
 * [Git/Github-Nutzung](https://github.com/HTWDD-RN/RTSP-Streaming/blob/master/git.md).
 
-Mittels des bereitgestellten Testskripts kann die formale Erfüllung der Abgabekriterien getestet werden.
-
 
