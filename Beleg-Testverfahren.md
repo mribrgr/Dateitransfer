@@ -10,8 +10,8 @@ Nachfolgende Server stehen zum Testen Ihres Programms zur Verfügung. Die Server
    * Die allgemeinen Ausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server0
    * Debugausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server0-debug
 2. Auf `idefix Port 3333` läuft zum Testen Ihres Clients ein Server mit den Parametern: Delay: 10 ms, Packet Loss: 0,1
-   * Die allgemeinen Ausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server
-   * Debugausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server-debug
+   * Die allgemeinen Ausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server1
+   * Debugausgaben des Servers erhalten Sie über: http://idefix.informatik.htw-dresden.de/rn-server1-debug
 3. Auf `idefix Port 3340` läuft zum Testen Ihres Clients+Servers ein Proxy mit den Parametern: Delay: 10 ms, Loss: 0,1
    * Ihr Client und Server müssen hierzu zwingend über dieselbe IP-Adresse erreichbar sein
    * Ihr Server muss auf Port 3400 empfangsbereit sein
