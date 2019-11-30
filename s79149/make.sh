@@ -1,1 +1,1 @@
-javac -d bin -sourcepath src src/UDPClient.java
+javac -d bin -sourcepath src src/*.java
