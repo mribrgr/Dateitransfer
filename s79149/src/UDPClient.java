@@ -46,7 +46,7 @@ class UDPClient {
 	private static variable recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: change to variable
 
 
-	private static variable file;
+	private static file_variable file = new file_variable();
 	private static Integer port;
 
 
@@ -61,27 +61,7 @@ class UDPClient {
 		// TODO: check parameter if it is an integer and if it is a valid port etc.
 	}
 
-	private static File getFile(String file_name) throws Exception
-	{
-		File ret = new File(file_name);
-
-		if (!ret.exists()) {
-			throw new Exception(file_name + " does not exists");
-		}
-		if (!ret.isFile()) {
-			throw new Exception(file_name + " is not a file");
-		}
-		if (!ret.canRead()) {
-			System.out.println(file_name + " is not readable");
-			if (!ret.setReadable(true)) {
-				throw new Exception("Do not have permissions to set " + file_name + " to readable");
-			}
-		}
-
-		return ret;
-	}
-
-	private static void mergeSendData()
+	private static void parseSendData()
 	{
 		// all
 		send_data.append(send_session_number);
@@ -125,7 +105,7 @@ class UDPClient {
 			
 			// https://stackoverflow.com/questions/18571223/how-to-convert-java-string-into-byte
 			send_keyword.setValue("Start".getBytes(Charset.forName("US-ASCII")));
-			send_file_length.setValue(file.length());
+			send_file_length.setValue(file.getLength());
 			send_file_name_length.setValue((short) file.getName().length());
 			send_file_name.setValue(file.getName().getBytes(Charset.forName("UTF-8")));
 
@@ -154,8 +134,9 @@ class UDPClient {
 		send_file_name_length.setValue(new byte[0]);
 		send_file_name.setValue(new byte[0]);
 
-		// TODO: add file data
-		send_file_data.setValue();
+		// TODO: test, if file data were added
+		file.read(send_file_data.getSize());
+		send_file_data.setValue(file.getValue());
 	}
 
 	private static void configureLastPacket()
@@ -222,8 +203,9 @@ class UDPClient {
 
 		InetAddress IPAddress = InetAddress.getByName(hostname);
 
-		final Integer packet_max_num = 3; // TODO: calculate from size of file
+		final Integer packet_max_num = 5; // TODO: calculate from size of file
 		for (Integer packet_num = 0; packet_num < packet_max_num; packet_num++) {
+			send_data.setValue(new byte[0]);
 			if (packet_num == 0) { // start packet
 				packet_type = start_packet;
 				configureStartPacket();
@@ -234,7 +216,7 @@ class UDPClient {
 				packet_type = data_packet;
 				configureDataPacket();
 			}
-			mergeSendData();
+			parseSendData();
 			
 			Integer seq;
 			for (seq = 0; seq<MAX_REPEATS; seq++) {
@@ -272,7 +254,7 @@ class UDPClient {
 				clientSocket.close();
 				System.exit(1);
 			} else {
-				System.out.println("Successfully send packet.");
+				System.out.println("Successfully send packet with size " + send_data.getSize() + ".");
 			}
 		}
 
@@ -289,9 +271,11 @@ class UDPClient {
 		port = Integer.parseInt(args[1]);
 		String file_name = args[2];
 
+		
 		try {
-			file = getFile(file_name);
+			file.openFile(file_name);
 			sendFile(hostname);
+			file.close();
 		} catch (Exception e) {
 			throw new Exception(e);
 		}

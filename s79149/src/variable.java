@@ -12,6 +12,7 @@ class variable {
     {
         this.value = value;
     }
+    protected variable(){}
 
     public Integer getPosition()
     {

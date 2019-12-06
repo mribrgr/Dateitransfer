@@ -16,7 +16,10 @@ class UDPServer {
 	// --- variables -------------------
 	 // stored vars
 	 private static variable stored_session_number = new variable(new byte[2]);
+
 	
+	private static file_variable file = new file_variable();
+	private static Integer bytes_wrote = 0;
 	
 	private static Boolean CRC32_is_valid = true;
 	
@@ -123,11 +126,27 @@ class UDPServer {
 				}
 				recv_file_name.setValue(new byte[recv_file_name_length.getShort()]);
 				recv_file_name.setValue(recv_data.getBytes(recv_file_name.getSize()));
+
+				System.out.println("Recv File name length: " + recv_file_name_length.getShort());
+				file.createFile(recv_file_name.getString());
 			}
 
 			// non-start packet
 			if (packet_type == data_packet || packet_type == last_packet) {
-				recv_file_data.setValue(recv_data.getBytes(recv_file_data.getSize()));
+				Integer bytes_to_write = 0;
+				if (RECV_FILE_DATA_SIZE > recv_file_length.getLong() - bytes_wrote) {
+					bytes_to_write = bytes_wrote;
+				} else {
+					bytes_to_write = RECV_FILE_DATA_SIZE;
+				}
+				recv_file_data.setValue(recv_data.getBytes(bytes_to_write));
+				file.write(recv_file_data.getValue());
+				System.out.println("Successfully wrote data.");
+				bytes_wrote += bytes_to_write;
+
+				for (int i = 0; i < recv_file_data.getSize(); i++) {
+					if (recv_file_data.getBytes(i, 1)[0] != 0) System.out.println("data: " + recv_file_data.getBytes(i, 1)[0]);
+				}
 			}
 
 			// first and last packet
@@ -180,13 +199,7 @@ class UDPServer {
 		return true; // TODO: fix it
 	}
 
-	/**
-	 * Gets file from client
-	 * @param port port, where to listen
-	 * @return String filename
-	 * @throws Exception
-	 */
-	private static String recvFile(int port) throws Exception
+	private static void recvFile(int port) throws Exception
 	{
 		DatagramSocket socket = new DatagramSocket(port);
 		socket.setSoTimeout(10000);
@@ -212,6 +225,8 @@ class UDPServer {
 			recv_data.setValue(request.getData());
 			
 			mergeRecvData();
+
+
 			
 			if (has_valid_session_number()) {
 				packet_type = data_packet;
@@ -254,43 +269,16 @@ class UDPServer {
 		}
 
 		socket.close();
-
-		return recv_file_name.getString();
-	}
-
-	private static void saveFile(String filename) throws Exception
-	{
-		File file = new File(filename);
-		Boolean isAvaiable = file.exists();
-		if (file.isDirectory()) {
-			throw new Exception("filename matches to a directory");
-		}
-		Integer filecount = 1;
-		
-		while (isAvaiable) {
-			file = new File(String.join(filename, Integer.toString(filecount)));
-			isAvaiable = file.exists();
-			if (file.isDirectory()) {
-				throw new Exception("filename matches to a directory");
-			}
-			filecount++;
-		}
-
-		// now the filename is avaiable.
-		System.out.println(filename + " is avaiable.");
-
-		return;
 	}
 
     public static void main(String args[]) throws Exception
     {
 		checkParameter(args);
 		int port = Integer.parseInt(args[0]);
-		String filename;
 
 		try {
-			filename = recvFile(port);
-			saveFile(filename);
+			recvFile(port);
+			file.close();
 		} catch (Exception e) {
 			throw new Exception(e);
 		}
