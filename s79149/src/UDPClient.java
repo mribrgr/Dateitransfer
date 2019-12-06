@@ -1,10 +1,25 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 class UDPClient {
-	// constants
+	// --- constants -------------------
 	private static final Integer MAX_REPEATS = 10;
+
+	private static final Integer start_packet = 0x001;
+	private static final Integer data_packet = 0x010;
+	private static final Integer last_packet = 0x100;
+
+	private static final Integer RECV_DATA_SIZE = 3;
+
+
+	// --- variables -------------------
+	 // stored vars
+	 private static variable stored_session_number = new variable(new byte[2]);
+	
+	
+	private static Integer packet_type = 0;
 
 	private static variable send_session_number = new variable(new byte[2]);
 
@@ -28,14 +43,14 @@ class UDPClient {
 	private static variable recv_session_number = new variable(new byte[2]);
 	private static variable recv_packet_number = new variable(new byte[1]);
 
-	private static variable recv_data = new variable(new byte[1024]); // TODO: change to variable
+	private static variable recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: change to variable
 
 
-	private static File file;
+	private static variable file;
 	private static Integer port;
 
 
-	private static void checkParamter(String args[])
+	private static void checkParameter(String args[])
 	{
 		if (args.length != 3) {
 			System.out.println("Unknown parameter array. Length " + args.length + " != 3!");
@@ -68,30 +83,35 @@ class UDPClient {
 
 	private static void mergeSendData()
 	{
+		// all
 		send_data.append(send_session_number);
 		send_data.append(send_packet_number);
 
 		// start packet
-		send_data.append(send_keyword);
-		send_data.append(send_file_length);
-		send_data.append(send_file_name_length);
-		send_data.append(send_file_name);
+		if (packet_type == start_packet) {
+			send_data.append(send_keyword);
+			send_data.append(send_file_length);
+			send_data.append(send_file_name_length);
+			send_data.append(send_file_name);
+
+			appendCRC32();
+		}
 
 		// non-start packet
-		send_data.append(send_file_data);
+		if (packet_type == data_packet || packet_type == last_packet) {
+			send_data.append(send_file_data);
+		}
+
+		if (packet_type == last_packet) {
+			appendCRC32(); // TODO: over complete file!!
+		}
+
 	}
 	
-	private static void addCRC32() throws Exception
+	private static void appendCRC32()
 	{
-		try {
-			send_check_sum_CRC32.setValue(send_data.calcCRC32(), 4, 4);
-			
-			System.out.println("Checksum: " +  (send_check_sum_CRC32.getInt() & 0xffffffffl));
-			
-			send_data.append(send_check_sum_CRC32);
-		} catch (Exception e) {
-			throw new Exception(e);
-		}
+		send_check_sum_CRC32.setValue(send_data.calcCRC32(), 4, 4);
+		send_data.append(send_check_sum_CRC32);
 	}
 
 	private static void configureStartPacket() throws Exception
@@ -135,6 +155,7 @@ class UDPClient {
 		send_file_name.setValue(new byte[0]);
 
 		// TODO: add file data
+		send_file_data.setValue();
 	}
 
 	private static void configureLastPacket()
@@ -142,6 +163,55 @@ class UDPClient {
 		incrementPacketNumber(send_packet_number);
 
 		// TODO: add end of file data with CRC32 over the file
+	}
+
+	private static void setDataToNull()
+	{
+		recv_session_number = new variable(new byte[2]);
+		recv_packet_number = new variable(new byte[1]);
+		recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: change to variable
+	}
+
+	private static Boolean has_valid_session_number()
+	{
+		// if (stored_session_number.getSize() == 0) {
+		// 	stored_session_number = recv_session_number;
+		// }
+
+		// if (Arrays.equals(stored_session_number.getValue(), recv_session_number.getValue())) {
+		// 	System.out.println("Session number isn't valid");
+		// 	for (int i = 0; i < stored_session_number.getSize(); i++) {
+		// 		System.out.println("Recv: " + recv_session_number.getBytes(i, 1)[0]);
+		// 		System.out.println("Stored: " + stored_session_number.getBytes(i, 1)[0]);
+		// 	}
+		// 	return true;
+		// } else {
+		// 	return false;
+		// }
+
+		return true; // TODO: fix it
+	}
+
+	private static class InvalidSessionNumberException extends Exception {}
+
+	private static void parseRecvData() throws Exception
+	{
+		try {
+			recv_session_number.setValue(recv_data.getBytes(recv_session_number.getSize()));
+			recv_packet_number.setValue(recv_data.getBytes(recv_packet_number.getSize()));
+
+			recv_data.resetPosition();
+
+			// TODO: check packet number
+
+			if (has_valid_session_number()) {
+				// valid session number
+			} else {
+				throw new InvalidSessionNumberException();
+			}
+		} catch (Exception e) {
+			throw e;
+		}
 	}
 
 	private static void sendFile(String hostname) throws Exception
@@ -155,21 +225,19 @@ class UDPClient {
 		final Integer packet_max_num = 3; // TODO: calculate from size of file
 		for (Integer packet_num = 0; packet_num < packet_max_num; packet_num++) {
 			if (packet_num == 0) { // start packet
+				packet_type = start_packet;
 				configureStartPacket();
-				mergeSendData();
-				addCRC32();
-			} else if (packet_num == packet_max_num - 1) { // data packet
+			} else if (packet_num == packet_max_num - 1) { // last packet
+				packet_type = last_packet;
 				configureLastPacket();
-				mergeSendData();
-				addCRC32(); // TODO: over complete file!!
 			} else {
+				packet_type = data_packet;
 				configureDataPacket();
-				mergeSendData();
 			}
+			mergeSendData();
 			
 			Integer seq;
 			for (seq = 0; seq<MAX_REPEATS; seq++) {
-				System.out.println((byte) send_packet_number.getByte());
 				// long time_send = System.currentTimeMillis();
 	
 				DatagramPacket send_packet =
@@ -185,9 +253,14 @@ class UDPClient {
 						throw new Exception("Receive Packet data is null");
 					}
 					else {
-						System.out.println("Recv data: " + recv_packet.getData());
+						System.out.println("Recv data size: " + recv_packet.getData().length);
+						parseRecvData();
 						break;
 					}
+				} catch (InvalidSessionNumberException e) {
+					System.out.println("InvalidSessionNumber");
+					seq--;
+					continue;
 				} catch (java.net.SocketTimeoutException e) {
 					System.out.println("No answer from Server");
 				} catch (Exception e) {
@@ -195,7 +268,11 @@ class UDPClient {
 				}
 			}
 			if (seq == MAX_REPEATS) {
-				throw new Exception("Got no answer after 10 retries");
+				System.out.println("Got no answer after 10 retries");
+				clientSocket.close();
+				System.exit(1);
+			} else {
+				System.out.println("Successfully send packet.");
 			}
 		}
 
@@ -206,7 +283,7 @@ class UDPClient {
 	
     public static void main(String args[]) throws Exception
     {
-		checkParamter(args);
+		checkParameter(args);
 
 		String hostname = args[0];
 		port = Integer.parseInt(args[1]);

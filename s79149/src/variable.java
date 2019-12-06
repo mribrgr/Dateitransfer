@@ -3,21 +3,30 @@ import java.util.Random;
 import java.util.zip.CRC32;
 
 class variable {
-    private byte[] value = new byte[0];
+    protected byte[] value = new byte[0];
 
     // needed for getBytes
-    private static Integer position = 0;
+    protected static Integer position = 0;
 
-    variable(byte[] value)
+    protected variable(byte[] value)
     {
         this.value = value;
+    }
+
+    public Integer getPosition()
+    {
+        return position;
+    }
+    public void resetPosition()
+    {
+        position = 0;
     }
 
     public void setValue(byte[] value)
     {
         this.value = value;
     }
-    public void setValue(Long value, Integer start, Integer length) throws Exception
+    public void setValue(Long value, Integer start, Integer length)
     {
         // https://stackoverflow.com/questions/4485128/how-do-i-convert-long-to-byte-and-back-in-java
         ByteBuffer buf = ByteBuffer.allocate(Long.BYTES);
@@ -25,23 +34,23 @@ class variable {
 
         for (int i = start; i < start+length; i++) {
             if (i-start >= this.value.length) {
-                throw new Exception("i out of value array");
+                throw new RuntimeException("i out of value array");
             }
             this.value[i-start] = buf.array()[i];
         }
     }
-    public void setValue(Long value) throws Exception
+    public void setValue(Long value)
     {
         setValue(value, 0, Long.BYTES);
     }
-    public void setValue(Short value) throws Exception
+    public void setValue(Short value)
     {
         // https://stackoverflow.com/questions/4485128/how-do-i-convert-long-to-byte-and-back-in-java
         ByteBuffer buf = ByteBuffer.allocate(Short.BYTES);
         buf.putShort(value);
         
         if (this.value.length != Short.BYTES) {
-            throw new Exception("variable size " + this.value.length + " is not " + Short.BYTES);
+            throw new RuntimeException("variable size " + this.value.length + " is not " + Short.BYTES);
         }
         
         this.value = buf.array();
@@ -62,17 +71,11 @@ class variable {
         }
 
         return String.copyValueOf(value);
-
-        // // https://stackoverflow.com/questions/4485128/how-do-i-convert-long-to-byte-and-back-in-java
-        // ByteBuffer buffer = ByteBuffer.allocate(1);
-        // buffer.put(recv_packet_number);
-        // buffer.flip(); //need flip
-        // System.out.println("Buffer size: " + buffer.array().length);
     }
-    public Short getShort() throws Exception
+    public Short getShort()
     {
         if (this.value.length != Short.BYTES) {
-            throw new Exception("variable size " + this.value.length + " is not " + Short.BYTES);
+            throw new RuntimeException("variable size " + this.value.length + " is not " + Short.BYTES);
         }
 
         ByteBuffer buf = ByteBuffer.allocate(this.value.length);
@@ -80,11 +83,11 @@ class variable {
         buf.flip();
         return buf.getShort();
     }
-    public Integer getInt() throws Exception
+    public Integer getInt()
     {
         // TODO: what happens, if the bytebuf.len is lower than 4? -> java.nio.BufferOverflowException
         if (this.value.length != Integer.BYTES) {
-            throw new Exception("variable size " + this.value.length + " is not " + Integer.BYTES);
+            throw new RuntimeException("variable size " + this.value.length + " is not " + Integer.BYTES);
         }
 
         ByteBuffer buf = ByteBuffer.allocate(this.value.length);
@@ -92,10 +95,10 @@ class variable {
         buf.flip();
         return buf.getInt();
     }
-    public Long getLong() throws Exception
+    public Long getLong()
     {
         if (this.value.length != Long.BYTES) {
-            throw new Exception("variable size " + this.value.length + " is not " + Long.BYTES);
+            throw new RuntimeException("variable size " + this.value.length + " is not " + Long.BYTES);
         }
 
         ByteBuffer buf = ByteBuffer.allocate(this.value.length);
@@ -103,7 +106,7 @@ class variable {
         buf.flip();
         return buf.getLong();
     }
-    private Byte getByte(Integer position)
+    protected Byte getByte(Integer position)
     {
         return this.value[position];
     }
@@ -111,17 +114,17 @@ class variable {
     {
         return getByte(0);
     }
-    public byte[] getBytes(Integer start, Integer length) throws Exception
+    public byte[] getBytes(Integer start, Integer length)
     {
         byte[] buf = new byte[length];
         if (length > this.value.length + start - 1) {
-            throw new Exception("Variable size " + this.value.length + " is lower than " + length);
+            throw new RuntimeException("Variable size " + this.value.length + " is lower than " + length);
         }
 
         System.arraycopy(this.value, start, buf, 0, length);
         return buf;
     }
-    public byte[] getBytes(Integer length) throws Exception
+    public byte[] getBytes(Integer length)
     {
         position += length;
         return this.getBytes(position - length, length);
@@ -134,7 +137,7 @@ class variable {
     }
 
     // unused? -> maybe  remove later
-    private void append(variable var, Integer size)
+    protected void append(variable var, Integer size)
     {
         // https://www.javatpoint.com/how-to-merge-two-arrays-in-java
         byte[] buf = new byte[this.value.length + size];
@@ -158,8 +161,20 @@ class variable {
      */
     public Long calcCRC32()
     {
-        CRC32 checksum = new CRC32();
-        checksum.update(this.value);
-        return checksum.getValue();
+        try {
+            return calcCRC32(0, this.value.length);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+    public Long calcCRC32(Integer start, Integer length)
+    {
+        try {
+            CRC32 checksum = new CRC32();
+            checksum.update(this.getBytes(start, length - 1));
+            return checksum.getValue();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
