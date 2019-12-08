@@ -1,8 +1,7 @@
-import java.io.*;
 import java.net.*;
 import java.util.Arrays;
 
-class UDPServer {
+class UDPServer extends Display {
 	// --- constants -------------------
 	private static final Integer FILE_NAME_MAX = 255;
 
@@ -37,11 +36,8 @@ class UDPServer {
 
 	// non-start packet
 	private static variable recv_file_data = new variable(new byte[RECV_FILE_DATA_SIZE]);
-
 	private static variable recv_check_sum_CRC32 = new variable(new byte[4]);
-
 	private static variable recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: calculate
-
 	private static variable send_data = new variable(new byte[0]); // TODO: change to variable
 
 
@@ -61,14 +57,33 @@ class UDPServer {
 		try {
 			variable calc_check_sum_CRC32 = new variable(new byte[4]);
 			calc_check_sum_CRC32.setValue(recv_data.calcCRC32(0, recv_data.getPosition()-4), 4, 4);
-			Boolean CRC32_sums_are_equal = Arrays.equals(calc_check_sum_CRC32.getValue(), recv_check_sum_CRC32.getValue());
-			if (!CRC32_sums_are_equal) {
+			Boolean CRC32_is_valid = Arrays.equals(calc_check_sum_CRC32.getValue(), recv_check_sum_CRC32.getValue());
+			if (!CRC32_is_valid) {
 				System.out.println("CRC32-check failed");
-				CRC32_is_valid = false;
 			} else {
-				CRC32_is_valid = true;
+				System.out.println("Successfully checked CRC32");
 			}
-			System.out.println("Successfully checked CRC32");
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+	}
+
+	private static void last_checkCRC32() throws Exception
+	{
+		try {
+			System.out.println("sum of file length: " + file.getSize());
+			if (file.getSize() == 0) {
+				throw new Exception("file length is null!");
+			}
+			
+			variable calc_check_sum_CRC32 = new variable(new byte[4]);
+			calc_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
+			Boolean CRC32_is_valid = Arrays.equals(calc_check_sum_CRC32.getValue(), recv_check_sum_CRC32.getValue());
+			if (!CRC32_is_valid) {
+				System.out.println("CRC32-check failed");
+			} else {
+				System.out.println("Successfully checked CRC32");
+			}
 		} catch (Exception e) {
 			throw new Exception(e);
 		}
@@ -103,20 +118,26 @@ class UDPServer {
 			throw e;
 		}
 	}
-		
-	public static void mergeRecvData() throws Exception
+
+	private static class InvalidSessionNumberException extends Exception {}
+
+	public static void parseRecvData() throws Exception
 	{
 		try {
 			// all
 			recv_session_number.setValue(recv_data.getBytes(recv_session_number.getSize()));
 			recv_packet_number.setValue(recv_data.getBytes(recv_packet_number.getSize()));
 			
+			if (!has_valid_session_number()) {
+				throw new InvalidSessionNumberException();
+			}
+
 			// start packet
 			if (packet_type == start_packet) {
 				recv_keyword.setValue(recv_data.getBytes(recv_keyword.getSize()));
 				recv_file_length.setValue(recv_data.getBytes(recv_file_length.getSize()));
 				recv_file_name_length.setValue(recv_data.getBytes(recv_file_name_length.getSize()));
-	
+
 				if ((recv_file_name_length.getShort() & 0xffffl) == 0)
 				{
 					System.out.println("Warning: File Name length is null");
@@ -132,21 +153,19 @@ class UDPServer {
 			}
 
 			// non-start packet
+			// TODO: rm last_packet here, it is not possible, that packet_type is last_packet here
 			if (packet_type == data_packet || packet_type == last_packet) {
 				Integer bytes_to_write = 0;
 				if (RECV_FILE_DATA_SIZE > recv_file_length.getLong() - bytes_wrote) {
-					bytes_to_write = bytes_wrote;
+					bytes_to_write = ((int) (long) recv_file_length.getLong())  - bytes_wrote;
+					packet_type = last_packet;
 				} else {
 					bytes_to_write = RECV_FILE_DATA_SIZE;
 				}
 				recv_file_data.setValue(recv_data.getBytes(bytes_to_write));
 				file.write(recv_file_data.getValue());
-				System.out.println("Successfully wrote data.");
+				System.out.println("Successfully wrote " + bytes_to_write +" bytes of data.");
 				bytes_wrote += bytes_to_write;
-
-				for (int i = 0; i < recv_file_data.getSize(); i++) {
-					if (recv_file_data.getBytes(i, 1)[0] != 0) System.out.println("data: " + recv_file_data.getBytes(i, 1)[0]);
-				}
 			}
 
 			// first and last packet
@@ -213,6 +232,17 @@ class UDPServer {
 				System.out.println("Start listening...");
 				socket.receive(request);
 				System.out.println("Packet received");
+				
+				recv_data.setValue(request.getData());
+	
+				parseRecvData();
+				if (packet_type == start_packet) {
+					packet_type = data_packet;
+				}
+			} catch (InvalidSessionNumberException e) {
+				print("Invalid session number received");
+				packet_type = start_packet;
+				continue;
 			} catch (java.net.SocketTimeoutException e) {
 				System.out.println("Got timeout, exit.");
 				socket.close();
@@ -222,22 +252,12 @@ class UDPServer {
 				throw e;
 			}
 
-			recv_data.setValue(request.getData());
-			
-			mergeRecvData();
-
-
-			
-			if (has_valid_session_number()) {
-				packet_type = data_packet;
-			} else {
-				packet_type = start_packet;
-				continue;
-			}
-			
 
 			if (packet_type == start_packet) {
 				checkCRC32();
+			}
+			if (packet_type == last_packet) {
+				last_checkCRC32();
 			}
 
 			recv_data.resetPosition();

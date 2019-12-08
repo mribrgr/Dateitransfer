@@ -24,17 +24,19 @@ public class file_variable extends variable {
 
     public void read(Integer bytes)
     {
-        
         try {
             if (this.file_input_stream == null) {
                 this.file_input_stream = new FileInputStream(this.file);
+                System.out.println("only at the beginning");
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        this.value = new byte[bytes];
-        try {
+            byte[] buf = new byte[bytes];
+            if (this.value == null) {
+                this.value = buf;
+            } else {
+                append(buf, buf.length);
+            }
             this.file_input_stream.read(this.value);
+            System.out.println("Read " + bytes + " bytes.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -92,7 +94,7 @@ public class file_variable extends variable {
 			throw new RuntimeException("file_name matches to a directory");
 		}
 		Integer filecount = 1;
-		
+        
 		while (!isAvaiable) {
 			file = new File(String.join(file_name, Integer.toString(filecount)));
 			isAvaiable = file.exists();

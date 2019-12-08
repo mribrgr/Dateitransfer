@@ -1,9 +1,9 @@
-import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
-class UDPClient {
+class UDPClient extends Display {
+	UDPClient(){super();}
+
 	// --- constants -------------------
 	private static final Integer MAX_REPEATS = 10;
 
@@ -12,14 +12,18 @@ class UDPClient {
 	private static final Integer last_packet = 0x100;
 
 	private static final Integer RECV_DATA_SIZE = 3;
+	private static final Integer SEND_FILE_DATA_SIZE = 512;
 
 
 	// --- variables -------------------
-	 // stored vars
+	 // stored vars - do not need values
 	 private static variable stored_session_number = new variable(new byte[2]);
-	
+	 private static variable stored_file_length = new variable(new byte[8]);
+	 private static variable stored_file_name_length = new variable(new byte[2]);
+	  private static variable stored_file_name = new variable(new byte[0]);
 	
 	private static Integer packet_type = 0;
+	private static Integer bytes_read = 0;
 
 	private static variable send_session_number = new variable(new byte[2]);
 
@@ -33,7 +37,7 @@ class UDPClient {
 	private static variable send_file_name = new variable(new byte[0]); // variable from 0 to 255 // TODO: needs to get a check
 
 	// non-start packet
-	private static variable send_file_data = new variable(new byte[512]);
+	private static variable send_file_data = new variable(new byte[SEND_FILE_DATA_SIZE]);
 
 	private static variable send_check_sum_CRC32 = new variable(new byte[4]);
 
@@ -109,7 +113,9 @@ class UDPClient {
 			send_file_name_length.setValue((short) file.getName().length());
 			send_file_name.setValue(file.getName().getBytes(Charset.forName("UTF-8")));
 
-			System.out.println("File name: " + send_file_name.getString());
+			stored_file_length.setValue(send_file_length.getValue());
+			stored_file_name_length.setValue(send_file_name_length.getValue());
+			stored_file_name.setValue(send_file_name.getValue());
 		} catch (Exception e) {
 			throw new Exception(e);
 		}
@@ -134,9 +140,21 @@ class UDPClient {
 		send_file_name_length.setValue(new byte[0]);
 		send_file_name.setValue(new byte[0]);
 
-		// TODO: test, if file data were added
-		file.read(send_file_data.getSize());
+		Integer bytes_to_read = 0;
+
+		if (SEND_FILE_DATA_SIZE > stored_file_length.getLong() - bytes_read) {
+			bytes_to_read = ((int) (long) stored_file_length.getLong()) - bytes_read;
+		} else {
+			bytes_to_read = SEND_FILE_DATA_SIZE;
+		}
+
+
+		file.read(bytes_to_read);
 		send_file_data.setValue(file.getValue());
+
+		bytes_read += bytes_to_read;
+
+		System.out.println("Bytes read: " + bytes_read);
 	}
 
 	private static void configureLastPacket()
@@ -144,6 +162,7 @@ class UDPClient {
 		incrementPacketNumber(send_packet_number);
 
 		// TODO: add end of file data with CRC32 over the file
+		send_check_sum_CRC32.setValue(file.calcCRC32());
 	}
 
 	private static void setDataToNull()
@@ -203,17 +222,20 @@ class UDPClient {
 
 		InetAddress IPAddress = InetAddress.getByName(hostname);
 
-		final Integer packet_max_num = 5; // TODO: calculate from size of file
+		final Integer packet_max_num = 100; // TODO: calculate from size of file
 		for (Integer packet_num = 0; packet_num < packet_max_num; packet_num++) {
 			send_data.setValue(new byte[0]);
 			if (packet_num == 0) { // start packet
 				packet_type = start_packet;
+				print("Start packet");
 				configureStartPacket();
 			} else if (packet_num == packet_max_num - 1) { // last packet
 				packet_type = last_packet;
+				print("Last packet");
 				configureLastPacket();
 			} else {
 				packet_type = data_packet;
+				print("Data packet");
 				configureDataPacket();
 			}
 			parseSendData();
@@ -255,6 +277,11 @@ class UDPClient {
 				System.exit(1);
 			} else {
 				System.out.println("Successfully send packet with size " + send_data.getSize() + ".");
+			}
+
+			// TODO: unsauber, da Long weg-gecastet wird
+			if (bytes_read == (int) (long) stored_file_length.getLong()) {
+				break;
 			}
 		}
 

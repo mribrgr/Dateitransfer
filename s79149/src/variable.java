@@ -138,22 +138,31 @@ class variable {
     }
 
     // unused? -> maybe  remove later
-    protected void append(variable var, Integer size)
+    protected void append(byte[] buf, Integer size)
     {
         // https://www.javatpoint.com/how-to-merge-two-arrays-in-java
-        byte[] buf = new byte[this.value.length + size];
-        System.arraycopy(this.value, 0, buf, 0, this.value.length);
-        this.value = buf;
-        System.arraycopy(var.getValue(), 0, this.value, this.value.length - size, size);
+        byte[] buf2 = new byte[this.value.length + size];
+        System.arraycopy(this.value, 0, buf2, 0, this.value.length);
+        this.value = buf2;
+        System.arraycopy(buf, 0, this.value, this.value.length - size, size);
     }
+    // unused? -> maybe  remove later
+    // protected void append(variable var, Integer size)
+    // {
+    //     // https://www.javatpoint.com/how-to-merge-two-arrays-in-java
+    //     byte[] buf = new byte[this.value.length + size];
+    //     System.arraycopy(this.value, 0, buf, 0, this.value.length);
+    //     this.value = buf;
+    //     System.arraycopy(var.getValue(), 0, this.value, this.value.length - size, size);
+    // }
     public void append(variable var)
     {
-        this.append(var, var.getSize());
+        this.append(var.getValue(), var.getSize());
     }
 
     public static void merge(variable var1, variable var2)
     {
-        var1.append(var2, var2.getSize());
+        var1.append(var2.getValue(), var2.getSize());
     }
 
     /**
