@@ -3,6 +3,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
 public class file_variable extends variable {
+    // protected int bytes_read = 0;
     protected File file;
     protected FileInputStream file_input_stream;
     protected FileOutputStream file_output_stream;
@@ -12,9 +13,11 @@ public class file_variable extends variable {
         super();
     }
 
-    public Long getLength()
+    
+    // TODO: change, because it's not smart
+    public Integer getSize()
     {
-        return this.file.length();
+        return (int) (long) this.file.length();
     }
 
     public String getName()
@@ -22,20 +25,21 @@ public class file_variable extends variable {
         return file.getName();
     }
 
+    // TODO: maybe remove bytes parameter (unused)
     public void read(Integer bytes)
     {
         try {
             if (this.file_input_stream == null) {
                 this.file_input_stream = new FileInputStream(this.file);
-                System.out.println("only at the beginning");
+
+                this.setValue(new byte[(int) this.file.length()]);
+                this.file_input_stream.read(this.value, 0, (int) this.file.length());
             }
-            byte[] buf = new byte[bytes];
-            if (this.value == null) {
-                this.value = buf;
-            } else {
-                append(buf, buf.length);
-            }
-            this.file_input_stream.read(this.value);
+
+            // if (this.file_input_stream.available() != bytes) {
+            //    throw new RuntimeException("File input stream ("+this.file_input_stream.available()+") is not enough for lenght " + bytes);
+            // }
+            
             System.out.println("Read " + bytes + " bytes.");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -46,9 +50,16 @@ public class file_variable extends variable {
     {
         try {
             if (this.file_output_stream == null) {
-                this.file_output_stream = new FileOutputStream(this.file.getName());
+                this.file_output_stream = new FileOutputStream(this.getName());
             }
+            print("bytes:");
+            print(bytes);
             file_output_stream.write(bytes);
+            if (this.getValue() == null || this.getValue().length == 0) {
+                this.setValue(bytes);
+            } else {
+                append(bytes, bytes.length);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

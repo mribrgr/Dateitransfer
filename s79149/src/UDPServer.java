@@ -71,7 +71,7 @@ class UDPServer extends Display {
 	private static void last_checkCRC32() throws Exception
 	{
 		try {
-			System.out.println("sum of file length: " + file.getSize());
+			System.out.println("file length: " + file.getSize());
 			if (file.getSize() == 0) {
 				throw new Exception("file length is null!");
 			}
@@ -79,13 +79,18 @@ class UDPServer extends Display {
 			variable calc_check_sum_CRC32 = new variable(new byte[4]);
 			calc_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
 			Boolean CRC32_is_valid = Arrays.equals(calc_check_sum_CRC32.getValue(), recv_check_sum_CRC32.getValue());
+			print("calc: ");
+			print(calc_check_sum_CRC32.getValue());
+			print("recv: ");
+			print(recv_check_sum_CRC32.getValue());
+			
 			if (!CRC32_is_valid) {
-				System.out.println("CRC32-check failed");
+				System.out.println("last CRC32-check failed");
 			} else {
-				System.out.println("Successfully checked CRC32");
+				System.out.println("Successfully checked last CRC32");
 			}
 		} catch (Exception e) {
-			throw new Exception(e);
+			throw e;
 		}
 	}
 
@@ -254,9 +259,11 @@ class UDPServer extends Display {
 
 
 			if (packet_type == start_packet) {
+				print("start packet");
 				checkCRC32();
 			}
 			if (packet_type == last_packet) {
+				print("last packet");
 				last_checkCRC32();
 			}
 

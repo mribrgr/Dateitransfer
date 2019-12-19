@@ -109,7 +109,7 @@ class UDPClient extends Display {
 			
 			// https://stackoverflow.com/questions/18571223/how-to-convert-java-string-into-byte
 			send_keyword.setValue("Start".getBytes(Charset.forName("US-ASCII")));
-			send_file_length.setValue(file.getLength());
+			send_file_length.setValue((long) file.getSize());
 			send_file_name_length.setValue((short) file.getName().length());
 			send_file_name.setValue(file.getName().getBytes(Charset.forName("UTF-8")));
 
@@ -117,7 +117,7 @@ class UDPClient extends Display {
 			stored_file_name_length.setValue(send_file_name_length.getValue());
 			stored_file_name.setValue(send_file_name.getValue());
 		} catch (Exception e) {
-			throw new Exception(e);
+			throw e;
 		}
 	}
 
@@ -148,10 +148,10 @@ class UDPClient extends Display {
 			bytes_to_read = SEND_FILE_DATA_SIZE;
 		}
 
-
+print("bytes to read: " + bytes_to_read);
 		file.read(bytes_to_read);
-		send_file_data.setValue(file.getValue());
-
+		// send_file_data.setValue(file.getValue()); // too much bytes, only need 512
+		send_file_data.setValue(file.getBytes(bytes_read, bytes_to_read));
 		bytes_read += bytes_to_read;
 
 		System.out.println("Bytes read: " + bytes_read);
@@ -162,7 +162,9 @@ class UDPClient extends Display {
 		incrementPacketNumber(send_packet_number);
 
 		// TODO: add end of file data with CRC32 over the file
-		send_check_sum_CRC32.setValue(file.calcCRC32());
+		send_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
+		print("calcCRC: ");
+		print(send_check_sum_CRC32.getValue());
 	}
 
 	private static void setDataToNull()
@@ -222,8 +224,13 @@ class UDPClient extends Display {
 
 		InetAddress IPAddress = InetAddress.getByName(hostname);
 
-		final Integer packet_max_num = 100; // TODO: calculate from size of file
-		for (Integer packet_num = 0; packet_num < packet_max_num; packet_num++) {
+		final int num_start_packets = 1;
+		
+		// TODO: was ist, wenn paket schon voll ist, d.h. die CRC nicht mehr mit rein passt?
+		final int num_data_packets = (int) (file.getSize()/SEND_FILE_DATA_SIZE) + 1;
+
+		final int packet_max_num = num_start_packets + num_data_packets;
+		for (int packet_num = 0; packet_num < packet_max_num; packet_num++) {
 			send_data.setValue(new byte[0]);
 			if (packet_num == 0) { // start packet
 				packet_type = start_packet;
