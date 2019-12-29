@@ -284,12 +284,13 @@ class UDPServer extends Display {
 				System.out.println("Send size: " + send_data.getSize());
 				System.out.println("Reply sent");
 			} else {
-				System.out.println("Reply not sent");
+				System.out.println("Reply not sent because CRC is invalid");
 			}
    
 
 			Boolean finished = false;
 			// TODO: add functionality to test the length of the file
+			print("file size: " + file.getSize());
 			if (finished) {
 				break;
 			}

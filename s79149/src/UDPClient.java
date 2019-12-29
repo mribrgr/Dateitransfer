@@ -94,8 +94,11 @@ class UDPClient extends Display {
 	
 	private static void appendCRC32()
 	{
-		print("appendCRC");
-		send_check_sum_CRC32.setValue(send_data.calcCRC32(), 4, 4);
+		if (packet_type == last_packet) {
+			send_check_sum_CRC32.setValue(file.calcCRC32(0, bytes_read), 4, 4);
+		} else {
+			send_check_sum_CRC32.setValue(send_data.calcCRC32(), 4, 4);
+		}
 		send_data.append(send_check_sum_CRC32);
 	}
 
@@ -176,9 +179,8 @@ class UDPClient extends Display {
 		send_file_data.setValue(getDataBytes());
 
 		// TODO: add end of file data with CRC32 over the file
-		send_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
-		print("send/calcCRC: ");
-		print(send_check_sum_CRC32.getValue());
+		// WARNING: is already in parseSendData()
+		//send_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
 	}
 
 	private static void setDataToNull()
@@ -305,6 +307,8 @@ class UDPClient extends Display {
 				break;
 			}
 		}
+
+		// TODO: add functionality for waiting for the last packet
 
 		// TODO: Auswertung der Zeiten
 

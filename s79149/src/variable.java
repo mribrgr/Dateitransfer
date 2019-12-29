@@ -187,13 +187,9 @@ class variable extends Display {
     }
     public Long calcCRC32(Integer start, Integer length)
     {
-        print("lenght: " + length);
         try {
             CRC32 checksum = new CRC32();
             checksum.update(this.getBytes(start, length)); // before: length-1
-
-            print("this.getBytes: ");
-            print(this.getBytes(start, length));
             return checksum.getValue();
         } catch (Exception e) {
             throw e;
