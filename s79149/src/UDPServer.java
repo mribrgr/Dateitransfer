@@ -79,46 +79,12 @@ class UDPServer extends Display {
 			variable calc_check_sum_CRC32 = new variable(new byte[4]);
 			calc_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
 			Boolean CRC32_is_valid = Arrays.equals(calc_check_sum_CRC32.getValue(), recv_check_sum_CRC32.getValue());
-			print("calc: ");
-			print(calc_check_sum_CRC32.getValue());
-			print("recv: ");
-			print(recv_check_sum_CRC32.getValue());
 			
 			if (!CRC32_is_valid) {
 				System.out.println("last CRC32-check failed");
 			} else {
-				System.out.println("Successfully checked last CRC32");
+				// System.out.println("Successfully checked last CRC32");
 			}
-		} catch (Exception e) {
-			throw e;
-		}
-	}
-
-	private static void printData() throws Exception
-	{
-		try {
-			// System.out.println("recv_length: " + recv_data.getSize());
-			
-			// System.out.println("Session number: " + (recv_session_number.getShort() & 0xffffl));
-			// System.out.println("Packet Number: " + recv_packet_number.getByte());
-			
-			// // sets encoding to US-ASCII
-			// // System.setProperty("file.encoding", "US-ASCII");
-			
-			// System.out.println("keyword: " + recv_keyword.getString());
-			
-			// System.out.println("file length: " + (recv_file_length.getLong() & 0xffffffffl));
-			// System.out.println("file name length: " + (recv_file_name_length.getShort() & 0xffffl));
-			// System.out.println("file name: " + recv_file_name.getString());
-			// System.out.println("CRC32: " + (recv_check_sum_CRC32.getInt() & 0xffffffffl));
-			
-			// // TODO: get last packet durch erreichen der file laenge
-			
-			
-			// for (int i = 0; i < recv_data.getSize(); i++) {
-			// 	if (recv_data.getValue()[i] != 0)
-			// 	System.out.format("i: %d - %x\n", i, recv_data.getValue()[i]);
-			// }
 		} catch (Exception e) {
 			throw e;
 		}
@@ -286,16 +252,19 @@ class UDPServer extends Display {
 			} else {
 				System.out.println("Reply not sent because CRC is invalid");
 			}
-   
 
-			Boolean finished = false;
-			// TODO: add functionality to test the length of the file
-			print("file size: " + file.getSize());
-			if (finished) {
+			Boolean file_end_reached = (file.getSize() == (int) (long) recv_file_length.getLong()) && file.getSize() != 0 && packet_type == last_packet;
+			 // The middle expression is neccessary, because otherwise it interupts in the first packet.
+			 // This expressions lets the algorithm be only for files which are longer than 0 bytes.
+			if (file_end_reached) {
+				print("EOF reached");
+				print("Waiting to send again, when ACK got lost");
+
+				request = new DatagramPacket(recv_data.getValue(), recv_data.getSize());
+
 				break;
 			}
 		}
-
 		socket.close();
 	}
 

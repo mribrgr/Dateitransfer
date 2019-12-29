@@ -158,10 +158,7 @@ class UDPClient extends Display {
 			bytes_to_read = SEND_FILE_DATA_SIZE;
 		}
 
-		print("bytes to read: " + bytes_to_read);
 		file.read(bytes_to_read);
-		// send_file_data.setValue(file.getValue()); // too much bytes, only need 512
-		// send_file_data.setValue(file.getBytes(bytes_read, bytes_to_read)); now it is the ret value
 		ret = file.getBytes(bytes_read, bytes_to_read);
 
 		bytes_read += bytes_to_read;
@@ -175,19 +172,7 @@ class UDPClient extends Display {
 	{
 		incrementPacketNumber(send_packet_number);
 
-		// warum habe ich hier keine file data ergaenzt..?
 		send_file_data.setValue(getDataBytes());
-
-		// TODO: add end of file data with CRC32 over the file
-		// WARNING: is already in parseSendData()
-		//send_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
-	}
-
-	private static void setDataToNull()
-	{
-		recv_session_number = new variable(new byte[2]);
-		recv_packet_number = new variable(new byte[1]);
-		recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: change to variable
 	}
 
 	private static Boolean has_valid_session_number()
@@ -263,7 +248,7 @@ class UDPClient extends Display {
 			}
 			parseSendData();
 			
-			Integer seq;
+			int seq;
 			for (seq = 0; seq<MAX_REPEATS; seq++) {
 				// long time_send = System.currentTimeMillis();
 	
@@ -285,7 +270,7 @@ class UDPClient extends Display {
 						break;
 					}
 				} catch (InvalidSessionNumberException e) {
-					System.out.println("InvalidSessionNumber");
+					System.out.println("InvalidSessionNumber received");
 					seq--;
 					continue;
 				} catch (java.net.SocketTimeoutException e) {
@@ -304,11 +289,10 @@ class UDPClient extends Display {
 
 			// TODO: unsauber, da Long weg-gecastet wird
 			if (bytes_read == (int) (long) stored_file_length.getLong()) {
+				print("file completely send");
 				break;
 			}
 		}
-
-		// TODO: add functionality for waiting for the last packet
 
 		// TODO: Auswertung der Zeiten
 
