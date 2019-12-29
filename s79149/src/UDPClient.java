@@ -94,6 +94,7 @@ class UDPClient extends Display {
 	
 	private static void appendCRC32()
 	{
+		print("appendCRC");
 		send_check_sum_CRC32.setValue(send_data.calcCRC32(), 4, 4);
 		send_data.append(send_check_sum_CRC32);
 	}
@@ -140,6 +141,12 @@ class UDPClient extends Display {
 		send_file_name_length.setValue(new byte[0]);
 		send_file_name.setValue(new byte[0]);
 
+		send_file_data.setValue(getDataBytes());
+	}
+
+	protected static byte[] getDataBytes()
+	{
+		byte[] ret = null;
 		Integer bytes_to_read = 0;
 
 		if (SEND_FILE_DATA_SIZE > stored_file_length.getLong() - bytes_read) {
@@ -148,22 +155,29 @@ class UDPClient extends Display {
 			bytes_to_read = SEND_FILE_DATA_SIZE;
 		}
 
-print("bytes to read: " + bytes_to_read);
+		print("bytes to read: " + bytes_to_read);
 		file.read(bytes_to_read);
 		// send_file_data.setValue(file.getValue()); // too much bytes, only need 512
-		send_file_data.setValue(file.getBytes(bytes_read, bytes_to_read));
+		// send_file_data.setValue(file.getBytes(bytes_read, bytes_to_read)); now it is the ret value
+		ret = file.getBytes(bytes_read, bytes_to_read);
+
 		bytes_read += bytes_to_read;
 
 		System.out.println("Bytes read: " + bytes_read);
+
+		return ret;
 	}
 
 	private static void configureLastPacket()
 	{
 		incrementPacketNumber(send_packet_number);
 
+		// warum habe ich hier keine file data ergaenzt..?
+		send_file_data.setValue(getDataBytes());
+
 		// TODO: add end of file data with CRC32 over the file
 		send_check_sum_CRC32.setValue(file.calcCRC32(), 4, 4);
-		print("calcCRC: ");
+		print("send/calcCRC: ");
 		print(send_check_sum_CRC32.getValue());
 	}
 

@@ -52,8 +52,6 @@ public class file_variable extends variable {
             if (this.file_output_stream == null) {
                 this.file_output_stream = new FileOutputStream(this.getName());
             }
-            print("bytes:");
-            print(bytes);
             file_output_stream.write(bytes);
             if (this.getValue() == null || this.getValue().length == 0) {
                 this.setValue(bytes);
