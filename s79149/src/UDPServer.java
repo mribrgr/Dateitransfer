@@ -8,6 +8,7 @@ class UDPServer extends Display {
 	private static final Integer start_packet = 0x001;
 	private static final Integer data_packet = 0x010;
 	private static final Integer last_packet = 0x100;
+	private static final Integer safe_last_packet = 0x101;
 
 	private static final Integer RECV_FILE_DATA_SIZE = 512;
 	private static final Integer RECV_DATA_SIZE = 2048;
@@ -71,7 +72,6 @@ class UDPServer extends Display {
 	private static void last_checkCRC32() throws Exception
 	{
 		try {
-			System.out.println("file length: " + file.getSize());
 			if (file.getSize() == 0) {
 				throw new Exception("file length is null!");
 			}
@@ -98,7 +98,7 @@ class UDPServer extends Display {
 			// all
 			recv_session_number.setValue(recv_data.getBytes(recv_session_number.getSize()));
 			recv_packet_number.setValue(recv_data.getBytes(recv_packet_number.getSize()));
-			
+
 			if (!has_valid_session_number()) {
 				throw new InvalidSessionNumberException();
 			}
@@ -119,28 +119,31 @@ class UDPServer extends Display {
 				recv_file_name.setValue(new byte[recv_file_name_length.getShort()]);
 				recv_file_name.setValue(recv_data.getBytes(recv_file_name.getSize()));
 
-				System.out.println("Recv File name length: " + recv_file_name_length.getShort());
 				file.createFile(recv_file_name.getString());
 			}
 
 			// non-start packet
 			// TODO: rm last_packet here, it is not possible, that packet_type is last_packet here
-			if (packet_type == data_packet || packet_type == last_packet) {
+			if (packet_type == data_packet || packet_type == last_packet || packet_type == safe_last_packet) {
 				Integer bytes_to_write = 0;
 				if (RECV_FILE_DATA_SIZE > recv_file_length.getLong() - bytes_wrote) {
 					bytes_to_write = ((int) (long) recv_file_length.getLong())  - bytes_wrote;
-					packet_type = last_packet;
+					if (packet_type == data_packet) {
+						packet_type = last_packet;
+					}
 				} else {
 					bytes_to_write = RECV_FILE_DATA_SIZE;
 				}
 				recv_file_data.setValue(recv_data.getBytes(bytes_to_write));
-				file.write(recv_file_data.getValue());
-				System.out.println("Successfully wrote " + bytes_to_write +" bytes of data.");
-				bytes_wrote += bytes_to_write;
+				
+				if (packet_type != safe_last_packet) {
+					file.write(recv_file_data.getValue());
+					bytes_wrote += bytes_to_write;
+				}
 			}
 
 			// first and last packet
-			if (packet_type == start_packet || packet_type == last_packet) {
+			if (packet_type == start_packet || packet_type == last_packet || packet_type == safe_last_packet) {
 				recv_check_sum_CRC32.setValue(recv_data.getBytes(recv_check_sum_CRC32.getSize()));
 			}
 		} catch (Exception e) {
@@ -148,45 +151,17 @@ class UDPServer extends Display {
 		}
 	}
 
-	private static void setDataToNull()
-	{
-		// TODO: replace array sizes with constants
-		recv_session_number = new variable(new byte[2]); // random uint_16
-		// does not need to be an array, but it's simpler for further calculations, if it is
-		recv_packet_number = new variable(new byte[1]); // 0 or 1
-		
-		// start packet
-		recv_keyword = new variable(new byte[5]); // String 5
-		recv_file_length = new variable(new byte[8]); // uint_64 = Long.Bytes
-		recv_file_name_length = new variable(new byte[2]); // uint_16
-		recv_file_name = new variable(new byte[0]); // variable from 0 to 255 // TODO: needs to get a check
-	
-		// non-start packet
-		recv_file_data = new variable(new byte[RECV_FILE_DATA_SIZE]);
-	
-		recv_check_sum_CRC32 = new variable(new byte[4]);
-	
-		recv_data = new variable(new byte[RECV_DATA_SIZE]); // TODO: calculate
-	}
-
 	private static Boolean has_valid_session_number()
 	{
-		// if (stored_session_number.getSize() == 0) {
-		// 	stored_session_number = recv_session_number;
-		// }
+		if (stored_session_number.getShort() == 0) {
+			stored_session_number = recv_session_number;
+		}
 
-		// if (Arrays.equals(stored_session_number.getValue(), recv_session_number.getValue())) {
-		// 	System.out.println("Session number isn't valid");
-		// 	for (int i = 0; i < stored_session_number.getSize(); i++) {
-		// 		System.out.println("Recv: " + recv_session_number.getBytes(i, 1)[0]);
-		// 		System.out.println("Stored: " + stored_session_number.getBytes(i, 1)[0]);
-		// 	}
-		// 	return true;
-		// } else {
-		// 	return false;
-		// }
-
-		return true; // TODO: fix it
+		if (Arrays.equals(stored_session_number.getValue(), recv_session_number.getValue())) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private static void recvFile(int port) throws Exception
@@ -215,9 +190,13 @@ class UDPServer extends Display {
 				packet_type = start_packet;
 				continue;
 			} catch (java.net.SocketTimeoutException e) {
-				System.out.println("Got timeout, exit.");
-				socket.close();
-				System.exit(1);
+				print("Got timeout, exit.");
+				if (packet_type == safe_last_packet) {
+					break;
+				} else {
+					socket.close();
+					System.exit(1);
+				}
 			} catch (Exception e) {
 				socket.close();
 				throw e;
@@ -228,15 +207,13 @@ class UDPServer extends Display {
 				print("start packet");
 				checkCRC32();
 			}
-			if (packet_type == last_packet) {
+			if (packet_type == last_packet || packet_type == safe_last_packet) {
 				print("last packet");
 				last_checkCRC32();
 			}
 
 			recv_data.resetPosition();
 			
-			// printData();
-
 			send_data.setValue(new byte[0]);
 
 			send_data.append(recv_session_number);
@@ -247,22 +224,19 @@ class UDPServer extends Display {
 			DatagramPacket reply = new DatagramPacket(recv_data.getValue(), recv_data.getSize(), clientHost, clientPort);
 			if (CRC32_is_valid) {
 				socket.send(reply);
-				System.out.println("Send size: " + send_data.getSize());
 				System.out.println("Reply sent");
 			} else {
 				System.out.println("Reply not sent because CRC is invalid");
 			}
 
+			// The middle expression is neccessary, because otherwise it interupts in the first packet.
+			// This expressions lets the algorithm be only for files which are longer than 0 bytes.
 			Boolean file_end_reached = (file.getSize() == (int) (long) recv_file_length.getLong()) && file.getSize() != 0 && packet_type == last_packet;
-			 // The middle expression is neccessary, because otherwise it interupts in the first packet.
-			 // This expressions lets the algorithm be only for files which are longer than 0 bytes.
 			if (file_end_reached) {
 				print("EOF reached");
-				print("Waiting to send again, when ACK got lost");
-
-				request = new DatagramPacket(recv_data.getValue(), recv_data.getSize());
-
-				break;
+				print("Waiting for client to send again, if ACK got lost");
+				packet_type = safe_last_packet;
+				continue;
 			}
 		}
 		socket.close();
@@ -276,6 +250,7 @@ class UDPServer extends Display {
 		try {
 			recvFile(port);
 			file.close();
+			print("file \"" + recv_file_name.getString() + "\" completely recieved");
 		} catch (Exception e) {
 			throw new Exception(e);
 		}

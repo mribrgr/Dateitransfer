@@ -1,5 +1,6 @@
 import java.net.*;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 class UDPClient extends Display {
 	UDPClient(){super();}
@@ -16,11 +17,12 @@ class UDPClient extends Display {
 
 
 	// --- variables -------------------
-	 // stored vars - do not need values
+	 // stored vars
 	 private static variable stored_session_number = new variable(new byte[2]);
+	 private static variable stored_packet_number = new variable(new byte[1]);
 	 private static variable stored_file_length = new variable(new byte[8]);
 	 private static variable stored_file_name_length = new variable(new byte[2]);
-	  private static variable stored_file_name = new variable(new byte[0]);
+	 private static variable stored_file_name = new variable(new byte[0]);
 	
 	private static Integer packet_type = 0;
 	private static Integer bytes_read = 0;
@@ -87,7 +89,7 @@ class UDPClient extends Display {
 		}
 
 		if (packet_type == last_packet) {
-			appendCRC32(); // TODO: over complete file!!
+			appendCRC32();
 		}
 
 	}
@@ -163,8 +165,6 @@ class UDPClient extends Display {
 
 		bytes_read += bytes_to_read;
 
-		System.out.println("Bytes read: " + bytes_read);
-
 		return ret;
 	}
 
@@ -177,22 +177,24 @@ class UDPClient extends Display {
 
 	private static Boolean has_valid_session_number()
 	{
-		// if (stored_session_number.getSize() == 0) {
-		// 	stored_session_number = recv_session_number;
-		// }
+		if (stored_session_number.getShort() == 0) {
+			stored_session_number = recv_session_number;
+		}
 
-		// if (Arrays.equals(stored_session_number.getValue(), recv_session_number.getValue())) {
-		// 	System.out.println("Session number isn't valid");
-		// 	for (int i = 0; i < stored_session_number.getSize(); i++) {
-		// 		System.out.println("Recv: " + recv_session_number.getBytes(i, 1)[0]);
-		// 		System.out.println("Stored: " + stored_session_number.getBytes(i, 1)[0]);
-		// 	}
-		// 	return true;
-		// } else {
-		// 	return false;
-		// }
+		if (Arrays.equals(stored_session_number.getValue(), recv_session_number.getValue())) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
-		return true; // TODO: fix it
+	private static Boolean has_valid_packet_number()
+	{
+		if (Arrays.equals(send_packet_number.getValue(), recv_packet_number.getValue())) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private static class InvalidSessionNumberException extends Exception {}
@@ -206,10 +208,11 @@ class UDPClient extends Display {
 			recv_data.resetPosition();
 
 			// TODO: check packet number
+			if (!has_valid_packet_number()) {
+				// throw new InvalidSessionNumberException(); // what should happen?
+			}
 
-			if (has_valid_session_number()) {
-				// valid session number
-			} else {
+			if (!has_valid_session_number()) {
 				throw new InvalidSessionNumberException();
 			}
 		} catch (Exception e) {
@@ -265,7 +268,7 @@ class UDPClient extends Display {
 						throw new Exception("Receive Packet data is null");
 					}
 					else {
-						System.out.println("Recv data size: " + recv_packet.getData().length);
+						print("Packet received");
 						parseRecvData();
 						break;
 					}
@@ -284,7 +287,7 @@ class UDPClient extends Display {
 				clientSocket.close();
 				System.exit(1);
 			} else {
-				System.out.println("Successfully send packet with size " + send_data.getSize() + ".");
+				System.out.println("Successfully send packet");
 			}
 
 			// TODO: unsauber, da Long weg-gecastet wird

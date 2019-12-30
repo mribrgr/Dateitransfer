@@ -35,12 +35,6 @@ public class file_variable extends variable {
                 this.setValue(new byte[(int) this.file.length()]);
                 this.file_input_stream.read(this.value, 0, (int) this.file.length());
             }
-
-            // if (this.file_input_stream.available() != bytes) {
-            //    throw new RuntimeException("File input stream ("+this.file_input_stream.available()+") is not enough for lenght " + bytes);
-            // }
-            
-            System.out.println("Read " + bytes + " bytes.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
