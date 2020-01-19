@@ -1,5 +1,6 @@
 import java.net.*;
 import java.util.Arrays;
+import java.util.Random;
 
 class UDPServer extends Display {
 	// --- constants -------------------
@@ -22,8 +23,9 @@ class UDPServer extends Display {
 	private static Integer bytes_wrote = 0;
 	
 	private static Boolean CRC32_is_valid = true;
-	
+
 	private static Integer packet_type = 0;
+	private static Integer stored_packet_type = 0;
 	
 	private static variable recv_session_number = new variable(new byte[2]); // random uint_16
 	// does not need to be an array, but it's simpler for further calculations, if it is
@@ -44,10 +46,14 @@ class UDPServer extends Display {
 
 	private static void checkParameter(String args[])
 	{
-		if (args.length != 1) {
-			System.out.println("Unknown parameter array. Length " + args.length + " != 1!");
-			System.out.println("Usage: " + "UDPServer" + " Port");
+		if (args.length != 3) {
+			System.out.println("Unknown parameter array. Length " + args.length + " != 3!");
+			System.out.println("Usage: " + "UDPServer" + " Port PacketLostRate PacketSendDelay");
 			System.exit(1);
+		}
+		
+		if (Double.parseDouble(args[1]) < 0 || Double.parseDouble(args[1]) > 1) {
+			throw new RuntimeException("Packet lost rate not from 0 to 1");
 		}
 
 		// TODO: check parameter if it is an integer and if it is a valid port etc.
@@ -164,7 +170,12 @@ class UDPServer extends Display {
 		}
 	}
 
-	private static void recvFile(int port) throws Exception
+	private static void resetPacketType()
+	{
+		packet_type = stored_packet_type;
+	}
+
+	private static void recvFile(int port, Double packet_lost_rate, int packet_send_delay) throws Exception
 	{
 		DatagramSocket socket = new DatagramSocket(port);
 		socket.setSoTimeout(10000);
@@ -174,6 +185,9 @@ class UDPServer extends Display {
 			// TODO: change to the calculated maximum
 			DatagramPacket request = new DatagramPacket(recv_data.getValue(), recv_data.getSize());
 
+			Random random = new Random();
+			Boolean packet_will_get_send = random.nextInt(Integer.MAX_VALUE) > packet_lost_rate * Integer.MAX_VALUE;	
+
 			try {
 				System.out.println("Start listening...");
 				socket.receive(request);
@@ -181,13 +195,14 @@ class UDPServer extends Display {
 				
 				recv_data.setValue(request.getData());
 	
+				stored_packet_type = packet_type;
 				parseRecvData();
 				if (packet_type == start_packet) {
 					packet_type = data_packet;
 				}
 			} catch (InvalidSessionNumberException e) {
 				print("Invalid session number received");
-				packet_type = start_packet;
+				resetPacketType();
 				continue;
 			} catch (java.net.SocketTimeoutException e) {
 				print("Got timeout, exit.");
@@ -201,6 +216,15 @@ class UDPServer extends Display {
 				socket.close();
 				throw e;
 			}
+
+
+/*
+
+Todo: als naechstes muss implementiert werden, dass der Server checkt, welche Pakete
+	   er schon hat und welche somit akzeptiert werden. Hierbei muss eingebaut werden,
+	   dass nur abwechselnd die Paketnummern erlaubt werden, sodass somit kein Paket
+	   doppelt vorhanden ist.
+*/
 
 
 			if (packet_type == start_packet) {
@@ -223,8 +247,13 @@ class UDPServer extends Display {
 			int clientPort = request.getPort();
 			DatagramPacket reply = new DatagramPacket(recv_data.getValue(), recv_data.getSize(), clientHost, clientPort);
 			if (CRC32_is_valid) {
-				socket.send(reply);
-				System.out.println("Reply sent");
+				if (packet_will_get_send) {
+					socket.send(reply);
+					System.out.println("Reply sent");
+				} else {
+					print("Sorry, this packet will not be sent.");
+					resetPacketType();
+				}
 			} else {
 				System.out.println("Reply not sent because CRC is invalid");
 			}
@@ -246,9 +275,11 @@ class UDPServer extends Display {
     {
 		checkParameter(args);
 		int port = Integer.parseInt(args[0]);
+		Double packet_lost_rate = Double.parseDouble(args[1]);
+		int packet_send_delay = Integer.parseInt(args[2]);
 
 		try {
-			recvFile(port);
+			recvFile(port, packet_lost_rate, packet_send_delay);
 			file.close();
 			print("file \"" + recv_file_name.getString() + "\" completely recieved");
 		} catch (Exception e) {

@@ -197,7 +197,14 @@ class UDPClient extends Display {
 		}
 	}
 
-	private static class InvalidSessionNumberException extends Exception {}
+	private static class InvalidNumberException extends Exception {}
+
+	private static class InvalidSessionNumberException extends InvalidNumberException {
+		String msg = "Invalid session number";
+	}
+	private static class InvalidPacketNumberException extends InvalidNumberException {
+		String msg = "Invalid packet number";
+	}
 
 	private static void parseRecvData() throws Exception
 	{
@@ -209,7 +216,7 @@ class UDPClient extends Display {
 
 			// TODO: check packet number
 			if (!has_valid_packet_number()) {
-				// throw new InvalidSessionNumberException(); // what should happen?
+				throw new InvalidPacketNumberException();
 			}
 
 			if (!has_valid_session_number()) {
@@ -272,8 +279,8 @@ class UDPClient extends Display {
 						parseRecvData();
 						break;
 					}
-				} catch (InvalidSessionNumberException e) {
-					System.out.println("InvalidSessionNumber received");
+				} catch (InvalidNumberException e) {
+					print(e);
 					seq--;
 					continue;
 				} catch (java.net.SocketTimeoutException e) {

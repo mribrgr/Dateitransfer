@@ -16,6 +16,12 @@ public class Display {
             System.out.println(string);
         }
     }
+    protected static void print(java.lang.Exception e)
+    {
+        if (show_messages) {
+            System.out.println(e.getMessage());
+        }
+    }
     protected static void print(variable var)
     {
         print(var.getString());
