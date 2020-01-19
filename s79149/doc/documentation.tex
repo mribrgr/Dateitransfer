@@ -1,0 +1,62 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
+\pagestyle{headings}
+
+\begin{document}
+
+\tableofcontents
+
+\newpage
+
+\section{Ansatz}
+\subsection{Wozu?}
+Aufgaben:
+
+sinnvolle Abstraktion der Informationen
+Management
+
+Herausforderungen:
+Langsamkeit der Medien
+Umfang
+Fehlertoleranz
+\subsection{Aufbau einer Festplatte}
+Stapel von rotierenden Magnetplatten, konstante Rotationsgeschwindigkeit
+Rotationsgeschwindigkeit ca. 5400 - 15000 min^-1 // Warum nicht lauter? -> zu laut
+2-16 Platten
+konzentrische Spuren (Tracks), ca 10.000 pro Oberfläche
+übereinanderliegende Spuren = >Zylinder
+kleinste ansprechbare Einheit: physischer Block (512 Byte -> kann mehr), z.B. 150-300 Sektoren pro Spur
+hystorisch: Adressierung eines Sektors über \{Zylinder, Kopf, Sektor\} - Tribel
+heute: Logical Block Addressing, einfach Durchnumerierung aller Blöcke (auf firmware der Festplatte)
+physisches Layout vor Nutzer vorborgen: Abbildung Logischer Blocknummern auf Physische Blocknummern durch Festplattenelektronik
+
+CD-ROM - Datenvolumen: es sollte 9. Symphonie von Beethoven drauf gehen
+
+\subsection{Welche Dateisysteme gibt es?}
+MS-DOS	FAT12, FAT16
+Windows NT ... 10	NTFS
+MacOS	HFS, HFS+, APFS
+LInux	ext2fs, ext4fs, btrfs
+
+Es gibt für das gleiche Betriebssystem manchmal verschiedene Dateisysteme (muss man sich vorher überlegen)
+
+Zusätzlich gibt es BS-übergreifende Dateisysteme (z.B. für CD-ROM: ISO9660)
+
+\subsecton{Grundlegende Abstraktionen: Datei}
+Datei = "Ansammlung" von Nutzdaten + Attribute
+
+Attribute:
+
+Schutz: Wer darf welche Operation mit Datei ausführen
+Eigentümer der Datei
+Beschränkungen der erlaubten Operationen (Read-only)
+Beschränkung der Sichtbarkeit der Datei(Hidden Flag, .dateiname)
+Dateiname
+Zeitstempel
+Größe der Datei
+Stellung des Dateipositionszeigers
+
+-> stat Kommando unter Linux
+
+\end{document}
